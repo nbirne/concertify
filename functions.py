@@ -17,12 +17,11 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=SP_CLIENT_ID,
                                                redirect_uri=SP_REDIRECT_URI,
                                                scope="playlist-modify-private"))
 
-def get_ticketmaster_concerts():
+def get_ticketmaster_concerts(city):
     print("Getting ticketmaster concerts." + TM_API_KEY)
     print("API key:" + TM_API_KEY)
     
     base_url = "https://app.ticketmaster.com/discovery/v2/events"
-    city = "Boston"
     date_range_start = date.today()
     date_range_end = date_range_start + timedelta(days=60)  # Two months from today
 
@@ -47,15 +46,18 @@ def get_ticketmaster_concerts():
 
 def print_concerts(concerts):
     if concerts:
-        print("Concerts in Boston within the next two months:")
+        print("Concerts within the next two months:")
         print(f"Count: {len(concerts)}")
+        for concert in concerts:
+            print(concert)
+            print('\n')
         for concert in concerts:
             name = concert['name']
             date = concert['dates']['start']['localDate']
             url = concert['url']
             
             # Get the performer's name from the attractions field
-            performers = [attraction['name'] for attraction in concert['_embedded']['attractions']]
+            performers = [attraction['name'] for attraction in concert.get('_embedded', {}).get('attractions', [])]
             performers_str = ', '.join(performers)
             
             print(f"{name} - {date} - {performers_str} - {url}")
@@ -72,7 +74,7 @@ def get_artists_from_concerts(concerts):
     print(f"Found {len(artists)} artists.")
     return artists
 
-def get_artist_songs(artist_names):
+def get_songs_from_artists(sp, artist_names):
     artist_songs = {}
     
     for artist_name in artist_names:
@@ -97,7 +99,5 @@ def get_artist_songs(artist_names):
 
     return artist_songs
 
-concerts = get_ticketmaster_concerts()
-artists = get_artists_from_concerts(concerts)
-songs = get_artist_songs(artists)
-print(songs)
+def get_saved_tracks(sp):
+    return sp.current_user_saved_tracks()
